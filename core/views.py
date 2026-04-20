@@ -1,4 +1,4 @@
-from rest_framework import status, generics
+from rest_framework import status, generics, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -26,8 +26,8 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
 
     def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
         try:
-            serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             user = serializer.save()
             refresh = RefreshToken.for_user(user)
@@ -38,14 +38,18 @@ class RegisterView(generics.CreateAPIView):
                 "access": str(refresh.access_token),
                 "refresh": str(refresh)
             }, status=status.HTTP_201_CREATED)
+        except serializers.ValidationError as e:
+            # Duplicate email or other validation issue - return 400
+            return Response({
+                "success": false,
+                "message": "This email is already registered. Please login instead.",
+                "errors": e.detail
+            }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            # Re-adding this to find the EXACT cause of the 500 error
-            import traceback
+            # Real internal error - return 500
             return Response({
                 "success": False,
-                "message": "Registration failed. Internal error.",
-                "debug_error": str(e),
-                "traceback": traceback.format_exc()
+                "message": "Registration failed. Internal server error.",
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ProfileView(generics.RetrieveUpdateAPIView):
