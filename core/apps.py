@@ -15,7 +15,7 @@ class CoreConfig(AppConfig):
                  from django.contrib.auth import get_user_model
                  User = get_user_model()
                  email = "arunbolli99@gmail.com"
-                 password = "DocZen123!"
+                 password = "arun2524"
                  
                  user, created = User.objects.get_or_create(email=email, defaults={
                      'username': email,
