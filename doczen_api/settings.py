@@ -146,9 +146,9 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Explicitly allow the known origin just in case
 CORS_ALLOWED_ORIGINS = [
-    "https://doczen-red.vercel.app",
-    "http://localhost:5173",
-    "http://localhost:3000",
+    'https://doczen-red.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000',
 ]
 
 CORS_ALLOW_HEADERS = [
@@ -207,8 +207,8 @@ GOOGLE_API_KEY = config('GOOGLE_API_KEY', default=None)
 HUGGINGFACE_API_KEY = config('HUGGINGFACE_API_KEY', default=None)
 
 # Media files
-# Temporarily using local storage for debugging 500 error
-# DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+# Using Cloudinary for persistent storage in production
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default='dhzl8t7pv'),
