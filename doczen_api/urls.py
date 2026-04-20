@@ -12,6 +12,9 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     
+    # Root Heartbeat
+    path('', api_root, name='health-check'),
+    
     # Root API view
     path('api/v1/', api_root, name='api-root'),
     
