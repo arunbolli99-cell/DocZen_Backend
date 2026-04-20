@@ -32,11 +32,7 @@ SECRET_KEY = 'django-insecure-x6tcjyg7*q%2zjbb*8gw6kzb*#(&g9cwj@qabl^(sk(jlh+m8=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    'doczen-backend.onrender.com',
-    'localhost',
-    '127.0.0.1',
-]
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -135,9 +131,10 @@ STATIC_URL = 'static/'
 AUTH_USER_MODEL = 'core.User'
 
 # CORS Settings
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS = True # Temporarily enable all for debugging
 CORS_ALLOW_CREDENTIALS = True
 
+# Explicitly allow the known origin just in case
 CORS_ALLOWED_ORIGINS = [
     "https://doczen-red.vercel.app",
     "http://localhost:5173",
@@ -165,6 +162,7 @@ CSRF_COOKIE_SECURE = True
 CSRF_TRUSTED_ORIGINS = [
     "https://doczen-red.vercel.app",
     "https://doczen-backend.onrender.com",
+    "https://*.vercel.app",
 ]
 
 # REST Framework Settings
