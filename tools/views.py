@@ -22,6 +22,7 @@ from django.http import HttpResponse, StreamingHttpResponse, FileResponse
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 import re
 import difflib
+from asgiref.sync import async_to_sync
 from .ai_service import ai_service
 from core.models import UserActivity
 from .serializers import (
@@ -212,9 +213,9 @@ class VoiceToolView(APIView):
                     communicate = edge_tts.Communicate(text, voice)
                     await communicate.save(output_path)
 
-                # Run the async function safely
+                # Run the async function safely using async_to_sync
                 try:
-                    asyncio.run(generate_voice())
+                    async_to_sync(generate_voice)()
                 except Exception as loop_error:
                     ai_service.log(f"AsyncIO Error in VoiceToolView: {loop_error}")
                     return Response({"success": False, "message": f"Voice generation failed: {str(loop_error)}"}, status=500)
