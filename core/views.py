@@ -24,32 +24,17 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
 
     def create(self, request, *args, **kwargs):
-        try:
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            user = serializer.save()
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                "success": True,
-                "message": "User registered successfully",
-                "user": UserSerializer(user).data,
-                "access": str(refresh.access_token),
-                "refresh": str(refresh)
-            }, status=status.HTTP_201_CREATED)
-        except serializers.ValidationError as e:
-            return Response({
-                "success": False,
-                "message": "This email is already registered or data is invalid.",
-                "errors": e.detail
-            }, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            import traceback
-            return Response({
-                "success": False,
-                "message": "Registration failed. Internal server error.",
-                "error_details": str(e),
-                "traceback": traceback.format_exc()
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "success": True,
+            "message": "User registered successfully",
+            "user": UserSerializer(user).data,
+            "access": str(refresh.access_token),
+            "refresh": str(refresh)
+        }, status=status.HTTP_201_CREATED)
 
 class ProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated,)
@@ -59,21 +44,12 @@ class ProfileView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
     def retrieve(self, request, *args, **kwargs):
-        try:
-            instance = self.get_object()
-            serializer = self.get_serializer(instance)
-            return Response({
-                "success": True,
-                "user": serializer.data
-            })
-        except Exception as e:
-            import traceback
-            return Response({
-                "success": False,
-                "message": "Failed to fetch profile.",
-                "debug_error": str(e),
-                "traceback": traceback.format_exc()
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response({
+            "success": True,
+            "user": serializer.data
+        })
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', True)
