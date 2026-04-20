@@ -41,7 +41,7 @@ class RegisterView(generics.CreateAPIView):
         except serializers.ValidationError as e:
             # Duplicate email or other validation issue - return 400
             return Response({
-                "success": false,
+                "success": False,
                 "message": "This email is already registered. Please login instead.",
                 "errors": e.detail
             }, status=status.HTTP_400_BAD_REQUEST)
