@@ -10,7 +10,8 @@ class UserActivitySerializer(serializers.ModelSerializer):
         fields = ('id', 'action_type', 'description', 'related_id', 'timestamp')
 
 class UserSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField(read_only=True)
+    full_name = serializers.CharField(write_only=True, required=False, source='name')
     recent_activities = serializers.SerializerMethodField()
 
     class Meta:
@@ -30,26 +31,28 @@ class UserSerializer(serializers.ModelSerializer):
         return ret
 
     def update(self, instance, validated_data):
-        name = self.initial_data.get('name', None)
-        if name is not None:
-            name_parts = name.split(' ', 1)
+        # Handle name if provided
+        name = self.initial_data.get('name') or self.initial_data.get('full_name')
+        if name:
+            name_parts = name.strip().split(' ', 1)
             instance.first_name = name_parts[0]
             instance.last_name = name_parts[1] if len(name_parts) > 1 else ""
         
+        # Handle other fields
         email = validated_data.get('email', instance.email)
         if email != instance.email:
-            # Check if another user already has this email/username
             if User.objects.filter(email=email).exclude(pk=instance.pk).exists():
-                from rest_framework import serializers
-                raise serializers.ValidationError({"email": "This email is already in use by another account."})
-            
+                raise serializers.ValidationError({"email": "This email is already in use."})
             instance.email = email
-            instance.username = email # Keep username in sync
+            instance.username = email
 
         instance.phone = validated_data.get('phone', instance.phone)
         instance.gender = validated_data.get('gender', instance.gender)
         instance.date_of_birth = validated_data.get('date_of_birth', instance.date_of_birth)
-        instance.profile_pic = validated_data.get('profile_pic', instance.profile_pic)
+        
+        if 'profile_pic' in validated_data:
+            instance.profile_pic = validated_data['profile_pic']
+            
         instance.save()
         return instance
 

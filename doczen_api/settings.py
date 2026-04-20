@@ -43,7 +43,9 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'cloudinary_storage',
     'django.contrib.staticfiles',
+    'cloudinary',
     'rest_framework',
     'corsheaders',
     'core',
@@ -205,5 +207,14 @@ GOOGLE_API_KEY = config('GOOGLE_API_KEY', default=None)
 HUGGINGFACE_API_KEY = config('HUGGINGFACE_API_KEY', default=None)
 
 # Media files
+# Using Cloudinary for persistent storage in production
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default='dhzl8t7pv'),
+    'API_KEY': config('CLOUDINARY_API_KEY', default='682562654792387'),
+    'API_SECRET': config('CLOUDINARY_API_SECRET', default='Gn1ijThXvHHa9YtQKfyICjtmj6g'),
+}
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
