@@ -92,6 +92,12 @@ DATABASES = {
     )
 }
 
+# Add options for specific database flavors if needed
+if 'postgres' in DATABASES['default']['ENGINE']:
+    DATABASES['default']['OPTIONS'] = {
+        'connect_timeout': 5,
+    }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
