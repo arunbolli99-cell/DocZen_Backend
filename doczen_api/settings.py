@@ -207,8 +207,8 @@ GOOGLE_API_KEY = config('GOOGLE_API_KEY', default=None)
 HUGGINGFACE_API_KEY = config('HUGGINGFACE_API_KEY', default=None)
 
 # Media files
-# Using Cloudinary for persistent storage in production
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+# Temporarily using local storage for debugging 500 error
+# DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default='dhzl8t7pv'),
