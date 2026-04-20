@@ -4,8 +4,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import RegisterSerializer, UserSerializer
-
 from .models import UserActivity
 from .serializers import RegisterSerializer, UserSerializer, UserActivitySerializer
 
@@ -26,8 +24,8 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
         try:
+            serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             user = serializer.save()
             refresh = RefreshToken.for_user(user)
@@ -39,17 +37,18 @@ class RegisterView(generics.CreateAPIView):
                 "refresh": str(refresh)
             }, status=status.HTTP_201_CREATED)
         except serializers.ValidationError as e:
-            # Duplicate email or other validation issue - return 400
             return Response({
                 "success": False,
-                "message": "This email is already registered. Please login instead.",
+                "message": "This email is already registered or data is invalid.",
                 "errors": e.detail
             }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            # Real internal error - return 500
+            import traceback
             return Response({
                 "success": False,
                 "message": "Registration failed. Internal server error.",
+                "error_details": str(e),
+                "traceback": traceback.format_exc()
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ProfileView(generics.RetrieveUpdateAPIView):
