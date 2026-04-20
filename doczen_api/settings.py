@@ -34,7 +34,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     'doczen-backend.onrender.com',
-    'doczen-red.vercel.app',
     'localhost',
     '127.0.0.1',
 ]
@@ -136,7 +135,7 @@ STATIC_URL = 'static/'
 AUTH_USER_MODEL = 'core.User'
 
 # CORS Settings
-CORS_ALLOW_ALL_ORIGINS = True # Set to False and use CORS_ALLOWED_ORIGINS in production
+CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
@@ -144,6 +143,24 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:3000",
 ]
+
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
+
+# Security Settings for Production (Render)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = False # Let Render handle the redirect to avoid infinite loops if misconfigured
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 CSRF_TRUSTED_ORIGINS = [
     "https://doczen-red.vercel.app",
