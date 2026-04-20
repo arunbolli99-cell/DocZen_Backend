@@ -59,12 +59,21 @@ class ProfileView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
     def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response({
-            "success": True,
-            "user": serializer.data
-        })
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
+            return Response({
+                "success": True,
+                "user": serializer.data
+            })
+        except Exception as e:
+            import traceback
+            return Response({
+                "success": False,
+                "message": "Failed to fetch profile.",
+                "debug_error": str(e),
+                "traceback": traceback.format_exc()
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', True)
