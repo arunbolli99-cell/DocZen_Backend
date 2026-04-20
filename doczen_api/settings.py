@@ -166,6 +166,9 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = False # Let Render handle the redirect to avoid infinite loops if misconfigured
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+
 
 CSRF_TRUSTED_ORIGINS = [
     "https://doczen-red.vercel.app",
