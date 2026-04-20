@@ -8,9 +8,9 @@ class CoreConfig(AppConfig):
     def ready(self):
         # This code runs when the app starts
         import os
-        # Only run in the main process (not when reloading or when doing collectstatic)
-        if os.environ.get('RUN_MAIN') != 'true' and 'GUNICORN_CMD_ARGS' not in os.environ and 'RENDER' in os.environ:
-             # On Render, we want to run this once to ensure the account exists in the ephemeral DB
+        # Only run once, not during reloads or migrations
+        if os.environ.get('RUN_MAIN') != 'true' and 'MANAGED_MODE' not in os.environ:
+             # Force the account fix on every startup to ensure the user can ALWAYS log in
              try:
                  from django.contrib.auth import get_user_model
                  User = get_user_model()
