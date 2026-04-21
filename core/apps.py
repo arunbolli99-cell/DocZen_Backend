@@ -27,6 +27,6 @@ class CoreConfig(AppConfig):
                  # Always reset password to ensure consistency 
                  user.set_password(password)
                  user.save()
-                 print(f"✅ Startup: Account {email} is ready.")
+                 print(f"DEBUG: Startup: Account {email} is ready.")
              except Exception as e:
-                 print(f"❌ Startup: Error creating account: {e}")
+                 print(f"DEBUG: Startup: Error creating account: {e}")
