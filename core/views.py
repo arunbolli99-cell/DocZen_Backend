@@ -91,8 +91,21 @@ class SendOTPView(generics.GenericAPIView):
 
     def post(self, request):
         email = request.data.get('email')
+        password = request.data.get('password')
+        
         if not email:
             return Response({"success": False, "message": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Security check: If user exists, they MUST provide the correct password before we send an OTP
+        try:
+            user = User.objects.get(email=email)
+            if not password:
+                return Response({"success": False, "message": "Password is required for existing accounts"}, status=status.HTTP_400_BAD_REQUEST)
+            if not user.check_password(password):
+                return Response({"success": False, "message": "Invalid password"}, status=status.HTTP_401_UNAUTHORIZED)
+        except User.DoesNotExist:
+            # New user, no password check needed yet (they will register via OTP)
+            pass
 
         # Generate 6-digit OTP
         otp_code = str(random.randint(100000, 999999))
@@ -104,7 +117,7 @@ class SendOTPView(generics.GenericAPIView):
         sent = send_otp_email(email, otp_code)
         
         if sent:
-            return Response({"success": True, "message": f"OTP sent to {email}"})
+            return Response({"success": True, "message": f"Verification code sent to {email}"})
         else:
             return Response({"success": False, "message": "Failed to send OTP. Please try again."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
