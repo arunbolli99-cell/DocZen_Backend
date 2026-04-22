@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-from core.views import api_root, RegisterView, ProfileView, UserActivityListView, UserActivityDestroyView
+from core.views import api_root, RegisterView, ProfileView, UserActivityListView, UserActivityDestroyView, SendOTPView, VerifyOTPView
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -21,6 +21,8 @@ urlpatterns = [
     # Auth Endpoints
     path('api/v1/auth/register/', RegisterView.as_view(), name='auth-register'),
     path('api/v1/auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/v1/auth/send-otp/', SendOTPView.as_view(), name='auth-send-otp'),
+    path('api/v1/auth/verify-otp/', VerifyOTPView.as_view(), name='auth-verify-otp'),
     path('api/v1/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/v1/auth/profile/', ProfileView.as_view(), name='auth-profile'),
     path('api/v1/auth/activities/', UserActivityListView.as_view(), name='auth-activities'),

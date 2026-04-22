@@ -4,8 +4,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import UserActivity
+import random
+from .models import UserActivity, OTP
 from .serializers import RegisterSerializer, UserSerializer, UserActivitySerializer
+from .utils import send_otp_email
 
 User = get_user_model()
 
@@ -84,3 +86,61 @@ class UserActivityDestroyView(generics.DestroyAPIView):
 
     def get_queryset(self):
         return UserActivity.objects.filter(user=self.request.user)
+class SendOTPView(generics.GenericAPIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response({"success": False, "message": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Generate 6-digit OTP
+        otp_code = str(random.randint(100000, 999999))
+        
+        # Save OTP to database
+        OTP.objects.create(email=email, code=otp_code)
+        
+        # Send Email
+        sent = send_otp_email(email, otp_code)
+        
+        if sent:
+            return Response({"success": True, "message": f"OTP sent to {email}"})
+        else:
+            return Response({"success": False, "message": "Failed to send OTP. Please try again."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class VerifyOTPView(generics.GenericAPIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        email = request.data.get('email')
+        code = request.data.get('code')
+        
+        if not email or not code:
+            return Response({"success": False, "message": "Email and code are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Find the latest unverified OTP for this email
+        otp_record = OTP.objects.filter(email=email, code=code, is_verified=False).last()
+        
+        if not otp_record:
+            return Response({"success": False, "message": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if otp_record.is_expired():
+            return Response({"success": False, "message": "OTP expired"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Mark as verified
+        otp_record.is_verified = True
+        otp_record.save()
+
+        # Get or create user
+        user, created = User.objects.get_or_create(email=email, defaults={'username': email.split('@')[0]})
+        
+        # Generate tokens
+        refresh = RefreshToken.for_user(user)
+        
+        return Response({
+            "success": True,
+            "message": "Logged in successfully" if not created else "Registered and logged in successfully",
+            "user": UserSerializer(user).data,
+            "access": str(refresh.access_token),
+            "refresh": str(refresh)
+        })
