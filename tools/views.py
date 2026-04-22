@@ -14,13 +14,13 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import api_view, permission_classes
 from .models import VoiceToolHistory, ChatMessage, TextToolHistory, ImageToolHistory, ResumeAnalysisHistory
 from django.shortcuts import redirect, get_object_or_404
-import edge_tts
-import asyncio
 import tempfile
 import os
 import re
 from asgiref.sync import async_to_sync
 import difflib
+from gtts import gTTS
+import io
 from django.http import HttpResponse, StreamingHttpResponse, FileResponse
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .ai_service import ai_service
@@ -203,37 +203,15 @@ class VoiceToolView(APIView):
                 return Response({"success": False, "message": "Text is required"}, status=status.HTTP_400_BAD_REQUEST)
 
             try:
-                import subprocess
-                import tempfile
+                # gTTS is synchronous and very stable in production
+                # Extract language code (e.g., 'en' from 'en-US-Aria')
+                lang_code = voice.split('-')[0]
                 
-                # Use a temp file for the subprocess output
-                with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
-                    output_path = tmp.name
-
-                try:
-                    # Run edge-tts as a separate process
-                    # This avoids all async/event-loop conflicts in production
-                    command = [
-                        "edge-tts",
-                        "--text", text,
-                        "--voice", voice,
-                        "--write-media", output_path
-                    ]
-                    
-                    subprocess.run(command, check=True, capture_output=True, text=True)
-                    
-                    # Read the generated audio
-                    with open(output_path, 'rb') as f:
-                        audio_data = f.read()
-                        
-                except subprocess.CalledProcessError as e:
-                    import sys
-                    print(f"TTS Subprocess Error: {e.stderr}", file=sys.stderr)
-                    return Response({"success": False, "message": f"Voice generation failed: {e.stderr}"}, status=500)
-                finally:
-                    # Cleanup the temp file
-                    if os.path.exists(output_path):
-                        os.unlink(output_path)
+                tts = gTTS(text=text, lang=lang_code)
+                audio_buffer = io.BytesIO()
+                tts.write_to_fp(audio_buffer)
+                audio_buffer.seek(0)
+                audio_data = audio_buffer.read()
 
                 # Persist History
                 history_item = VoiceToolHistory.objects.create(
@@ -241,7 +219,7 @@ class VoiceToolView(APIView):
                     tool_type="tts",
                     input_data=text,
                     voice_used=voice,
-                    output_result={"success": True, "note": "Generated via subprocess"}
+                    output_result={"success": True, "note": "Generated via gTTS"}
                 )
 
                 # Log Activity
