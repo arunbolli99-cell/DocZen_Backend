@@ -18,11 +18,11 @@ import edge_tts
 import asyncio
 import tempfile
 import os
+import re
+from asgiref.sync import async_to_sync
+import difflib
 from django.http import HttpResponse, StreamingHttpResponse, FileResponse
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-import re
-import difflib
-from asgiref.sync import async_to_sync
 from .ai_service import ai_service
 from core.models import UserActivity
 from .serializers import (
@@ -209,15 +209,27 @@ class VoiceToolView(APIView):
                 filename = f"tts_{request.user.id}_{int(time.time())}.mp3"
                 output_path = os.path.join(temp_dir, filename)
 
-                async def generate_voice():
-                    communicate = edge_tts.Communicate(text, voice)
-                    await communicate.save(output_path)
+                import io
+                audio_buffer = io.BytesIO()
 
-                # Run the async function safely using async_to_sync
+                async def generate_voice_to_buffer():
+                    communicate = edge_tts.Communicate(text, voice)
+                    async for chunk in communicate.stream():
+                        if chunk["type"] == "audio":
+                            audio_buffer.write(chunk["data"])
+
+                # Robust Async Handling for Deployment (Gunicorn/Render)
                 try:
-                    async_to_sync(generate_voice)()
+                    # Create a fresh event loop for this request thread
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    try:
+                        loop.run_until_complete(generate_voice_to_buffer())
+                    finally:
+                        loop.close()
                 except Exception as loop_error:
-                    ai_service.log(f"AsyncIO Error in VoiceToolView: {loop_error}")
+                    import sys
+                    print(f"TTS Loop Error: {loop_error}", file=sys.stderr)
                     return Response({"success": False, "message": f"Voice generation failed: {str(loop_error)}"}, status=500)
 
                 # Persist History
@@ -226,7 +238,7 @@ class VoiceToolView(APIView):
                     tool_type="tts",
                     input_data=text,
                     voice_used=voice,
-                    output_result={"success": True, "filename": filename}
+                    output_result={"success": True, "note": "Generated in memory"}
                 )
 
                 # Log Activity
@@ -237,9 +249,10 @@ class VoiceToolView(APIView):
                     related_id=history_item.id
                 )
 
-                # Return the file as a response
-                response = FileResponse(open(output_path, 'rb'), content_type='audio/mpeg')
-                response['Content-Disposition'] = f'attachment; filename="{filename}"'
+                # Return the buffer content as a response
+                audio_buffer.seek(0)
+                response = HttpResponse(audio_buffer.read(), content_type='audio/mpeg')
+                response['Content-Disposition'] = f'attachment; filename="tts_voice.mp3"'
                 return response
 
             except Exception as e:
