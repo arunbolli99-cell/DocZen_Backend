@@ -203,34 +203,37 @@ class VoiceToolView(APIView):
                 return Response({"success": False, "message": "Text is required"}, status=status.HTTP_400_BAD_REQUEST)
 
             try:
-                # Use a unique filename for the session
-                import time
-                temp_dir = tempfile.gettempdir()
-                filename = f"tts_{request.user.id}_{int(time.time())}.mp3"
-                output_path = os.path.join(temp_dir, filename)
+                import subprocess
+                import tempfile
+                
+                # Use a temp file for the subprocess output
+                with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
+                    output_path = tmp.name
 
-                import io
-                audio_buffer = io.BytesIO()
-
-                async def generate_voice_to_buffer():
-                    communicate = edge_tts.Communicate(text, voice)
-                    async for chunk in communicate.stream():
-                        if chunk["type"] == "audio":
-                            audio_buffer.write(chunk["data"])
-
-                # Robust Async Handling for Deployment (Gunicorn/Render)
                 try:
-                    # Create a fresh event loop for this request thread
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                    try:
-                        loop.run_until_complete(generate_voice_to_buffer())
-                    finally:
-                        loop.close()
-                except Exception as loop_error:
+                    # Run edge-tts as a separate process
+                    # This avoids all async/event-loop conflicts in production
+                    command = [
+                        "edge-tts",
+                        "--text", text,
+                        "--voice", voice,
+                        "--write-media", output_path
+                    ]
+                    
+                    subprocess.run(command, check=True, capture_output=True, text=True)
+                    
+                    # Read the generated audio
+                    with open(output_path, 'rb') as f:
+                        audio_data = f.read()
+                        
+                except subprocess.CalledProcessError as e:
                     import sys
-                    print(f"TTS Loop Error: {loop_error}", file=sys.stderr)
-                    return Response({"success": False, "message": f"Voice generation failed: {str(loop_error)}"}, status=500)
+                    print(f"TTS Subprocess Error: {e.stderr}", file=sys.stderr)
+                    return Response({"success": False, "message": f"Voice generation failed: {e.stderr}"}, status=500)
+                finally:
+                    # Cleanup the temp file
+                    if os.path.exists(output_path):
+                        os.unlink(output_path)
 
                 # Persist History
                 history_item = VoiceToolHistory.objects.create(
@@ -238,7 +241,7 @@ class VoiceToolView(APIView):
                     tool_type="tts",
                     input_data=text,
                     voice_used=voice,
-                    output_result={"success": True, "note": "Generated in memory"}
+                    output_result={"success": True, "note": "Generated via subprocess"}
                 )
 
                 # Log Activity
@@ -249,9 +252,8 @@ class VoiceToolView(APIView):
                     related_id=history_item.id
                 )
 
-                # Return the buffer content as a response
-                audio_buffer.seek(0)
-                response = HttpResponse(audio_buffer.read(), content_type='audio/mpeg')
+                # Return the audio data
+                response = HttpResponse(audio_data, content_type='audio/mpeg')
                 response['Content-Disposition'] = f'attachment; filename="tts_voice.mp3"'
                 return response
 
