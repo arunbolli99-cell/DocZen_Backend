@@ -104,10 +104,12 @@ class SendOTPView(generics.GenericAPIView):
                 return Response({"success": False, "message": "Password is required for existing accounts"}, status=status.HTTP_400_BAD_REQUEST)
             if not user_obj.check_password(password):
                 return Response({"success": False, "message": "Invalid password"}, status=status.HTTP_401_UNAUTHORIZED)
-            username = user_obj.username or email.split('@')[0]
+            # Prefer display name (first + last), fallback to email prefix
+            name = f"{user_obj.first_name} {user_obj.last_name}".strip()
+            username = name or email.split('@')[0].capitalize()
         except User.DoesNotExist:
-            # New user, no password check needed yet (they will register via OTP)
-            username = email.split('@')[0]
+            # New user, use capitalized email prefix as a placeholder
+            username = email.split('@')[0].capitalize()
 
         # Generate 6-digit OTP
         otp_code = str(random.randint(100000, 999999))

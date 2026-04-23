@@ -59,8 +59,8 @@ class UserSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     confirm_password = serializers.CharField(write_only=True)
     name = serializers.CharField(required=True)
-    phone = serializers.CharField(required=False, allow_blank=True)
-    gender = serializers.CharField(required=False, allow_blank=True)
+    phone = serializers.CharField(required=True, allow_blank=False)
+    gender = serializers.CharField(required=True, allow_blank=False)
     date_of_birth = serializers.DateField(required=False, allow_null=True)
 
     class Meta:
