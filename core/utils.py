@@ -51,7 +51,7 @@ def send_otp_email(email, otp_code, username="User"):
                 
                 <div style="background-color: #fff7ed; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin-bottom: 30px;">
                     <p style="margin: 0; color: #b45309; font-size: 14px; line-height: 1.5;">
-                        <strong>Security Reminder:</strong> Never share this code with anyone. DocZen staff will never ask for your verification code. If you didn't request this, please secure your account immediately.
+                        <strong>Security Reminder:</strong> Never share this code with anyone. If you didn't request this, please secure your account immediately.
                     </p>
                 </div>
                 
@@ -63,7 +63,7 @@ def send_otp_email(email, otp_code, username="User"):
             <!-- Footer -->
             <div style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #f1f5f9;">
                 <p style="margin: 0; color: #94a3b8; font-size: 12px; line-height: 1.5;">
-                    &copy; 2024 DocZen AI. Empowering your document workflow with artificial intelligence.<br>
+                    &copy; DocZen AI. Empowering your document workflow with artificial intelligence.<br>
                     This is an automated security message, please do not reply.
                 </p>
                 <div style="margin-top: 15px;">
